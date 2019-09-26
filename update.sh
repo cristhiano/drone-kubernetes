@@ -35,14 +35,24 @@ kubectl config use-context default
 # kubectl version
 IFS=',' read -r -a DEPLOYMENTS <<< "${PLUGIN_DEPLOYMENT}"
 IFS=',' read -r -a CONTAINERS <<< "${PLUGIN_CONTAINER}"
-for DEPLOY in ${DEPLOYMENTS[@]}; do
+IFS=',' read -r -a CRONJOBS <<< "${PLUGIN_CRONJOB}"
+for CONTAINER in ${CONTAINERS[@]}; do
   echo Deploying to $KUBERNETES_SERVER
-  for CONTAINER in ${CONTAINERS[@]}; do
+  for DEPLOY in ${DEPLOYMENTS[@]}; do
     if [[ ${PLUGIN_FORCE} == "true" ]]; then
       kubectl -n ${PLUGIN_NAMESPACE} set image deployment/${DEPLOY} \
         ${CONTAINER}=${PLUGIN_REPO}:${PLUGIN_TAG}FORCE
     fi
     kubectl -n ${PLUGIN_NAMESPACE} set image deployment/${DEPLOY} \
+      ${CONTAINER}=${PLUGIN_REPO}:${PLUGIN_TAG} --record
+  done
+
+  for CRONJOB in ${CRONJOBS[@]}; do
+    if [[ ${PLUGIN_FORCE} == "true" ]]; then
+      kubectl -n ${PLUGIN_NAMESPACE} set image cronjob.v1beta1.batch/${CRONJOB} \
+        ${CONTAINER}=${PLUGIN_REPO}:${PLUGIN_TAG}FORCE
+    fi
+    kubectl -n ${PLUGIN_NAMESPACE} set image cronjob.v1beta1.batch/${CRONJOB} \
       ${CONTAINER}=${PLUGIN_REPO}:${PLUGIN_TAG} --record
   done
 done
